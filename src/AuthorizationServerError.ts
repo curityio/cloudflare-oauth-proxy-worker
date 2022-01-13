@@ -14,14 +14,8 @@
  *  limitations under the License.
  */
 
-export {}
-
-declare global {
-  const TRUSTED_WEB_ORIGINS: string
-  const COOKIE_NAME_PREFIX: string
-  const ENCRYPTION_KEY: string
-  const USE_PHANTOM_TOKEN: boolean
-  const INTROSPECTION_URL: string
-  const CLIENT_ID: string
-  const CLIENT_SECRET: string
+export default class AuthorizationServerError extends Error {
+  constructor() {
+    super('Error returned from the Authorization Server')
+  }
 }

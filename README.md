@@ -1,39 +1,22 @@
-# ʕ •́؈•̀) `worker-typescript-template`
+# OAuth Proxy module worker 
 
-A batteries included template for kick starting a TypeScript Cloudflare worker project.
+[![Quality](https://img.shields.io/badge/quality-experiment-red)](https://curity.io/resources/code-examples/status/)
+[![Availability](https://img.shields.io/badge/availability-source-blue)](https://curity.io/resources/code-examples/status/)
 
-## Note: You must use [wrangler](https://developers.cloudflare.com/workers/cli-wrangler/install-update) 1.17 or newer to use this template.
+An Oauth Proxy module is part of a [Token Handler](https://curity.io/resources/learn/the-token-handler-pattern/) component, a lightweight backend component designed to securely deal with tokens in Single Page Applications. This repository provides a Cloudflare worker implementation of the module using Typescript. The module is responsible for obtaining an access token from an encrypted cookie and forwards the request to the upstream API with the token put in the `Authorization` header. If opaque (phantom) tokens are used, the worker performs token introspection to exchange the opaque token for a JWT.
 
-## 🔋 Getting Started
+## Getting Started
 
-This template is meant to be used with [Wrangler](https://github.com/cloudflare/wrangler). If you are not already familiar with the tool, we recommend that you install the tool and configure it to work with your [Cloudflare account](https://dash.cloudflare.com). Documentation can be found [here](https://developers.cloudflare.com/workers/tooling/wrangler/).
+ You need [Wrangler](https://github.com/cloudflare/wrangler) at least in version 1.17. to work with this code. If you are not already familiar with the tool, then have a look at the [documentation](https://developers.cloudflare.com/workers/tooling/wrangler/).
 
-To generate using Wrangler, run this command:
+### Running the Dev Environment
 
-```bash
-wrangler generate my-ts-project https://github.com/cloudflare/worker-typescript-template
-```
+First make sure that proper configuration values are entered in the `wrangler.toml` file, then run `wrangler dev` to start the worker in the dev environment. Have a look at the [Token Handler end to end tutorial](https://curity.io/resources/learn/token-handler-spa-tutorial/) to learn how to set up the rest of the environment used by the Token Handler. That tutorial uses an nginx API gateway and must be tweaked to work with this worker. 
 
-### 👩 💻 Developing
+### Testing
 
-[`src/index.ts`](./src/index.ts) calls the request handler in [`src/handler.ts`](./src/handler.ts), and will return the [request method](https://developer.mozilla.org/en-US/docs/Web/API/Request/method) for the given request.
+`npm test` will run the test suite. Tests are written using [Jest](https://jestjs.io/).
 
-### 🧪 Testing
+## More Information
 
-This template comes with jest tests which simply test that the request handler can handle each request method. `npm test` will run your tests.
-
-### ✏️ Formatting
-
-This template uses [`prettier`](https://prettier.io/) to format the project. To invoke, run `npm run format`.
-
-### 👀 Previewing and Publishing
-
-For information on how to preview and publish your worker, please see the [Wrangler docs](https://developers.cloudflare.com/workers/tooling/wrangler/commands/#publish).
-
-## 🤢 Issues
-
-If you run into issues with this specific project, please feel free to file an issue [here](https://github.com/cloudflare/worker-typescript-template/issues). If the problem is with Wrangler, please file an issue [here](https://github.com/cloudflare/wrangler/issues).
-
-## ⚠️ Caveats
-
-The `service-worker-mock` used by the tests is not a perfect representation of the Cloudflare Workers runtime. It is a general approximation. We recommend that you test end to end with `wrangler dev` in addition to a [staging environment](https://developers.cloudflare.com/workers/tooling/wrangler/configuration/environments/) to test things before deploying.
+Please visit [curity.io](https://curity.io/) for more information about the Token Handler and the Curity Identity Server.

@@ -1,7 +1,7 @@
 {
-  "name": "worker-typescript-template",
+  "name": "oauth-proxy-worker",
   "version": "1.0.0",
-  "description": "Cloudflare worker TypeScript template",
+  "description": "An Oauth Proxy module for the Token Handler pattern",
   "main": "dist/worker.js",
   "scripts": {
     "build": "webpack",
@@ -9,8 +9,8 @@
     "lint": "eslint --max-warnings=0 src && prettier --check '*.{json,js}' 'src/**/*.{js,ts}' 'test/**/*.{js,ts}'",
     "test": "jest --config jestconfig.json --verbose"
   },
-  "author": "author",
-  "license": "MIT OR Apache-2.0",
+  "author": "Curity AB",
+  "license": "Apache-2.0",
   "eslintConfig": {
     "root": true,
     "extends": [

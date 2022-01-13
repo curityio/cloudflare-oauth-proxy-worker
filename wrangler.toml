@@ -14,4 +14,8 @@ format = "service-worker"
 [vars]
 ENCRYPTION_KEY = "cc26d51be30dd69f11369c6a7af214ef5fce70a6f6ef19f02ab55d4cff4bce5d"
 COOKIE_NAME_PREFIX = "example"
-TRUSTED_WEB_ORIGINS = "http://www.example.com"
+TRUSTED_WEB_ORIGINS = "https://www.example.com"
+USE_PHANTOM_TOKEN = true
+INTROSPECTION_URL = "https://login.example.com:8443/oauth/v2/oauth-token"
+CLIENT_ID = "gateway-client"
+CLIENT_SECRET = "Password1"
