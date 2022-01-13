@@ -17,7 +17,7 @@
 import { handleRequest } from '../src/handler'
 import makeServiceWorkerEnv from 'service-worker-mock'
 import Configuration from '../src/configuration'
-import encryptCookie from './cookieEncrypter'
+import encryptValue from './valueEncrypter'
 import { serialize } from 'cookie'
 
 declare let global: never
@@ -52,7 +52,7 @@ describe('OAuth Proxy tests', () => {
 
   test('should pass OPTIONS without any checks', async () => {
     const result = await handleRequest(
-      new Request('/', { method: 'OPTIONS' }),
+      request('OPTIONS'),
       configuration,
       fetchOk,
     )
@@ -61,10 +61,7 @@ describe('OAuth Proxy tests', () => {
 
   test('should pass requests with Bearer token without any modifications', async () => {
     const result = await handleRequest(
-      new Request('/', {
-        method: 'GET',
-        headers: { Authorization: 'Bearer access_token' },
-      }),
+      request('GET', { Authorization: 'Bearer access_token' }),
       configuration,
       fetchOk,
     )
@@ -73,10 +70,7 @@ describe('OAuth Proxy tests', () => {
 
   test('request from untrusted origin should return a 401 response', async () => {
     const result = await handleRequest(
-      new Request('/', {
-        method: 'GET',
-        headers: { Origin: 'https://malicious.site' },
-      }),
+      request('GET', { Origin: 'https://malicious.site' }),
       configuration,
       fetchOk,
     )
@@ -89,10 +83,7 @@ describe('OAuth Proxy tests', () => {
     'Data changing %p request without CSRF cookie should return 401 response',
     async (method) => {
       const result = await handleRequest(
-        new Request('/', {
-          method: method,
-          headers: { Origin: configuration.trustedOrigins[0] },
-        }),
+        trustedOriginRequest(method),
         configuration,
         fetchOk,
       )
@@ -104,16 +95,7 @@ describe('OAuth Proxy tests', () => {
     'Data changing %p request with invalid CSRF cookie should return 401 response',
     async (method) => {
       const result = await handleRequest(
-        new Request('/', {
-          method: method,
-          headers: {
-            Origin: configuration.trustedOrigins[0],
-            Cookie: serialize(
-              configuration.cookieNamePrefix + '-csrf',
-              'invalid',
-            ),
-          },
-        }),
+        trustedOriginRequest(method, { Cookie: csrfCookie('invalid') }),
         configuration,
         fetchOk,
       )
@@ -125,24 +107,21 @@ describe('OAuth Proxy tests', () => {
     'Data changing %p request with a a valid CSRF cookie should return a 200 response',
     async (method) => {
       const csrfToken = 'abcdef'
-      const csrfCookie = encryptCookie(csrfToken, configuration.encryptionKey)
+      const csrfEncryptedToken = encryptValue(
+        csrfToken,
+        configuration.encryptionKey,
+      )
       const csrfHeaderName = 'x-' + configuration.cookieNamePrefix + '-csrf'
-      const headers = new Headers({
-        Origin: configuration.trustedOrigins[0],
-        Cookie: [
-          serialize(configuration.cookieNamePrefix + '-csrf', csrfCookie),
-          serialize(
-            configuration.cookieNamePrefix + '-at',
-            encryptCookie('token', configuration.encryptionKey),
-          ),
-        ].join('; '),
-      })
-      headers.set(csrfHeaderName, csrfToken)
 
       const result = await handleRequest(
-        new Request('/', {
-          method: method,
-          headers: headers,
+        trustedOriginRequest(method, {
+          Cookie: [
+            csrfCookie(csrfEncryptedToken),
+            accessTokenCookie(
+              encryptValue('token', configuration.encryptionKey),
+            ),
+          ].join('; '),
+          [csrfHeaderName]: csrfToken,
         }),
         configuration,
         fetchOk,
@@ -153,12 +132,7 @@ describe('OAuth Proxy tests', () => {
 
   test('Request without an access token cookie should return a 401 response', async () => {
     const result = await handleRequest(
-      new Request('/', {
-        method: 'GET',
-        headers: {
-          Origin: configuration.trustedOrigins[0],
-        },
-      }),
+      trustedOriginRequest('GET'),
       configuration,
       fetchOk,
     )
@@ -168,13 +142,7 @@ describe('OAuth Proxy tests', () => {
 
   test('Request with invalid access token cookie should return a 401 response', async () => {
     const result = await handleRequest(
-      new Request('/', {
-        method: 'GET',
-        headers: {
-          Origin: configuration.trustedOrigins[0],
-          Cookie: serialize(configuration.cookieNamePrefix + '-at', 'invalid'),
-        },
-      }),
+      trustedOriginRequest('GET', { Cookie: accessTokenCookie('invalid') }),
       configuration,
       fetchOk,
     )
@@ -183,23 +151,15 @@ describe('OAuth Proxy tests', () => {
   })
 
   test('Request with a valid access token cookie should return a 200 and forward the token to the API', async () => {
+    const accessToken = 'access_token'
     const fetch = (request: Request) => {
       const authorizationHeader = request.headers.get('Authorization')
-      expect(authorizationHeader).toEqual('Bearer access_token')
+      expect(authorizationHeader).toEqual('Bearer ' + accessToken)
       return Promise.resolve(new Response('', { status: 200 }))
     }
 
     const result = await handleRequest(
-      new Request('/', {
-        method: 'GET',
-        headers: {
-          Origin: configuration.trustedOrigins[0],
-          Cookie: serialize(
-            configuration.cookieNamePrefix + '-at',
-            encryptCookie('access_token', configuration.encryptionKey),
-          ),
-        },
-      }),
+      requestWithValidAccessToken(accessToken),
       configuration,
       fetch,
     )
@@ -211,16 +171,7 @@ describe('OAuth Proxy tests', () => {
     const fetch = () => Promise.resolve(new Response('', { status: 500 }))
 
     const result = await handleRequest(
-      new Request('/', {
-        method: 'GET',
-        headers: {
-          Origin: configuration.trustedOrigins[0],
-          Cookie: serialize(
-            configuration.cookieNamePrefix + '-at',
-            encryptCookie('access_token', configuration.encryptionKey),
-          ),
-        },
-      }),
+      requestWithValidAccessToken(),
       configWithPhantomTokenEnabled,
       fetch,
     )
@@ -234,16 +185,7 @@ describe('OAuth Proxy tests', () => {
     }
 
     const result = await handleRequest(
-      new Request('/', {
-        method: 'GET',
-        headers: {
-          Origin: configuration.trustedOrigins[0],
-          Cookie: serialize(
-            configuration.cookieNamePrefix + '-at',
-            encryptCookie('access_token', configuration.encryptionKey),
-          ),
-        },
-      }),
+      requestWithValidAccessToken(),
       configWithPhantomTokenEnabled,
       fetch,
     )
@@ -255,16 +197,7 @@ describe('OAuth Proxy tests', () => {
     const fetch = () => Promise.resolve(new Response('', { status: 204 }))
 
     const result = await handleRequest(
-      new Request('/', {
-        method: 'GET',
-        headers: {
-          Origin: configuration.trustedOrigins[0],
-          Cookie: serialize(
-            configuration.cookieNamePrefix + '-at',
-            encryptCookie('access_token', configuration.encryptionKey),
-          ),
-        },
-      }),
+      requestWithValidAccessToken(),
       configWithPhantomTokenEnabled,
       fetch,
     )
@@ -286,20 +219,50 @@ describe('OAuth Proxy tests', () => {
     }
 
     const result = await handleRequest(
-      new Request('/', {
-        method: 'GET',
-        headers: {
-          Origin: configuration.trustedOrigins[0],
-          Cookie: serialize(
-            configuration.cookieNamePrefix + '-at',
-            encryptCookie('access_token', configuration.encryptionKey),
-          ),
-        },
-      }),
+      requestWithValidAccessToken('access_token'),
       configWithPhantomTokenEnabled,
       fetch,
     )
 
     expect(result.status).toEqual(200)
   })
+
+  const request = (
+    method: string,
+    headers: HeadersInitializer | undefined = undefined,
+  ): Request => {
+    if (headers) {
+      return new Request('/', { method: method, headers })
+    } else {
+      return new Request('/', { method: method })
+    }
+  }
+
+  const trustedOriginRequest = (
+    method: string,
+    additionalHeaders: HeadersInitializer | undefined = undefined,
+  ): Request => {
+    let headers = { Origin: configuration.trustedOrigins[0] }
+
+    if (additionalHeaders !== undefined) {
+      headers = {
+        ...additionalHeaders,
+        ...headers,
+      }
+    }
+
+    return request(method, headers)
+  }
+
+  const requestWithValidAccessToken = (token = 'access_token') =>
+    trustedOriginRequest('GET', {
+      Cookie: accessTokenCookie(
+        encryptValue(token, configuration.encryptionKey),
+      ),
+    })
+
+  const csrfCookie = (token: string) =>
+    serialize(configuration.cookieNamePrefix + '-csrf', token)
+  const accessTokenCookie = (token: string) =>
+    serialize(configuration.cookieNamePrefix + '-at', token)
 })

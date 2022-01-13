@@ -16,7 +16,7 @@
 
 import crypto, { CipherKey } from 'crypto'
 
-export default function encryptCookie(
+export default function encryptValue(
   value: string,
   encryptionKeyHex: string,
 ): string {
