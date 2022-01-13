@@ -42,11 +42,7 @@ export async function handleRequest(
   if (config.trustedOrigins.length) {
     if (!config.trustedOrigins.includes(originFromHeader)) {
       console.warn(
-        'The %s request to %s was from an untrusted web origin: %s. Trusted origins: %s',
-        request.method,
-        request.url,
-        originFromHeader,
-        config.trustedOriginsString,
+        `The ${request.method} request to ${request.url} was from an untrusted web origin: ${originFromHeader}. Trusted origins: ${config.trustedOriginsString}`,
       )
       return new Response(
         JSON.stringify({
@@ -71,9 +67,7 @@ export async function handleRequest(
 
     if (!csrfEncryptedCookie) {
       console.warn(
-        'No CSRF cookie was sent with the %s request to %s',
-        request.method,
-        request.url,
+        `No CSRF cookie was sent with the ${request.method} request to ${request.url}`,
       )
       return unauthorizedResponse(config.trustedOrigins, originFromHeader)
     }
@@ -87,10 +81,7 @@ export async function handleRequest(
       )
     } catch (error) {
       console.warn(
-        'Error decrypting CSRF cookie %s during %s request to %s ',
-        csrfEncryptedCookie,
-        request.method,
-        request.url,
+        `Error decrypting CSRF cookie ${csrfEncryptedCookie} during ${request.method} request to ${request.url}.`,
       )
       return unauthorizedResponse(config.trustedOrigins, originFromHeader)
     }
@@ -98,11 +89,7 @@ export async function handleRequest(
     const csrfTokenFromHeader = request.headers.get('x-' + csrfCookieName)
     if (csrfTokenFromHeader !== csrfTokenFromCookie) {
       console.warn(
-        'Invalid or missing CSRF request header %s during %s request to %. CSRF token from cookie: %s',
-        csrfTokenFromHeader,
-        request.method,
-        request.url,
-        csrfTokenFromCookie,
+        `Invalid or missing CSRF request header ${csrfTokenFromHeader} during ${request.method} request to ${request.url}. CSRF token from cookie: ${csrfTokenFromCookie}`,
       )
       return unauthorizedResponse(config.trustedOrigins, originFromHeader)
     }
@@ -112,9 +99,7 @@ export async function handleRequest(
   const accessTokenEncryptedCookie = cookies[config.cookieNamePrefix + '-at']
   if (!accessTokenEncryptedCookie) {
     console.warn(
-      'No access token cookie was sent with the %s request to %s',
-      request.method,
-      request.url,
+      `No access token cookie was sent with the ${request.method} request to ${request.url}`,
     )
     return unauthorizedResponse(config.trustedOrigins, originFromHeader)
   }
@@ -130,10 +115,7 @@ export async function handleRequest(
     )
   } catch (error) {
     console.warn(
-      'Error decrypting access token cookie %s during %s request to %s',
-      accessTokenEncryptedCookie,
-      request.method,
-      request.url,
+      `Error decrypting access token cookie ${accessTokenEncryptedCookie} during ${request.method} request to ${request.url}`,
     )
     return unauthorizedResponse(config.trustedOrigins, originFromHeader)
   }
@@ -144,10 +126,7 @@ export async function handleRequest(
       accessToken = await exchangePhantomToken(accessToken, config, fetch)
     } catch (error) {
       console.warn(
-        'Error encountered when trying to exchange the Phantom Token during %s request to %s. Access token from cookie: %s',
-        request.method,
-        request.url,
-        accessToken,
+        `Error encountered when trying to exchange the Phantom Token during ${request.method} request to ${request.url}. Access token from cookie: ${accessToken}`,
         error,
       )
       return badGatewayResponse(config.trustedOrigins, originFromHeader)
