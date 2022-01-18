@@ -15,7 +15,12 @@
  */
 
 export default class AuthorizationServerError extends Error {
-  constructor() {
+  statusCode: number
+  responseBodyPromise: Promise<string>
+  constructor(statusCode: number, responseBodyPromise: Promise<string>) {
     super('Error returned from the Authorization Server')
+
+    this.statusCode = statusCode
+    this.responseBodyPromise = responseBodyPromise
   }
 }

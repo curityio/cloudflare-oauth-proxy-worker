@@ -14,20 +14,13 @@
  *  limitations under the License.
  */
 
-import crypto from 'crypto'
-
 const GCM_IV_SIZE = 12
 const GCM_TAG_SIZE = 16
 
-export default function decryptCookie(
-  cookieValue: string,
+export default async function decryptCookie(
+  payloadHex: string,
   encryptionKeyHex: string,
-): string {
-  const encryptionKeyBytes = Buffer.from(encryptionKeyHex, 'hex')
-  return decrypt(cookieValue, encryptionKeyBytes)
-}
-
-function decrypt(payloadHex: string, encryptionKeyBytes: Buffer): string {
+): Promise<string> {
   const minSize = (GCM_IV_SIZE + 1 + GCM_TAG_SIZE) * 2
   if (payloadHex.length < minSize) {
     throw new Error('The received payload is invalid and cannot be parsed')
@@ -40,20 +33,32 @@ function decrypt(payloadHex: string, encryptionKeyBytes: Buffer): string {
   )
   const tagHex = payloadHex.substring(payloadHex.length - GCM_TAG_SIZE * 2)
 
-  const ivBytes = Buffer.from(ivHex, 'hex')
-  const ciphertextBytes = Buffer.from(ciphertextHex, 'hex')
-  const tagBytes = Buffer.from(tagHex, 'hex')
-
-  const decipher = crypto.createDecipheriv(
-    'aes-256-gcm',
-    encryptionKeyBytes,
-    ivBytes,
+  const aesKey = await crypto.subtle.importKey(
+    'raw',
+    hexToBytes(encryptionKeyHex),
+    'AES-GCM',
+    true,
+    ['decrypt'],
   )
-  decipher.setAuthTag(tagBytes)
-  const plaintextBytes = Buffer.concat([
-    decipher.update(ciphertextBytes),
-    decipher.final(),
-  ])
 
-  return plaintextBytes.toString('ascii')
+  const decrypted = await crypto.subtle.decrypt(
+    {
+      name: 'AES-GCM',
+      iv: hexToBytes(ivHex),
+      tagLength: GCM_TAG_SIZE * 8,
+    },
+    aesKey,
+    hexToBytes(ciphertextHex + tagHex),
+  )
+
+  const decoder = new TextDecoder()
+  return decoder.decode(decrypted)
+}
+
+function hexToBytes(hex: string): Uint8Array {
+  const bytes = new Uint8Array(hex.length / 2)
+  for (let i = 0; i !== bytes.length; i++) {
+    bytes[i] = parseInt(hex.substr(i * 2, 2), 16)
+  }
+  return bytes
 }

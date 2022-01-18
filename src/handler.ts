@@ -75,13 +75,14 @@ export async function handleRequest(
     let csrfTokenFromCookie = ''
 
     try {
-      csrfTokenFromCookie = decryptCookie(
+      csrfTokenFromCookie = await decryptCookie(
         csrfEncryptedCookie,
         config.encryptionKey,
       )
     } catch (error) {
       console.warn(
         `Error decrypting CSRF cookie ${csrfEncryptedCookie} during ${request.method} request to ${request.url}.`,
+        error.message,
       )
       return unauthorizedResponse(config.trustedOrigins, originFromHeader)
     }
@@ -109,7 +110,7 @@ export async function handleRequest(
   let accessToken: string | null
 
   try {
-    accessToken = decryptCookie(
+    accessToken = await decryptCookie(
       accessTokenEncryptedCookie,
       config.encryptionKey,
     )
@@ -125,10 +126,22 @@ export async function handleRequest(
     try {
       accessToken = await exchangePhantomToken(accessToken, config, fetch)
     } catch (error) {
-      console.warn(
-        `Error encountered when trying to exchange the Phantom Token during ${request.method} request to ${request.url}. Access token from cookie: ${accessToken}`,
-        error,
-      )
+      if (error instanceof AuthorizationServerError) {
+        console.warn(
+          `Error response from the Authorization Server when trying to exchange the Phantom Token during ${
+            request.method
+          } request to ${request.url}. 
+            Access token from cookie: ${accessToken}. Response code: ${
+            error.statusCode
+          }. Response body from server: ${await error.responseBodyPromise}`,
+          error.message,
+        )
+      } else {
+        console.warn(
+          `Error encountered when trying to exchange the Phantom Token during ${request.method} request to ${request.url}. Access token from cookie: ${accessToken}`,
+          error.message,
+        )
+      }
       return badGatewayResponse(config.trustedOrigins, originFromHeader)
     }
   }
@@ -196,8 +209,7 @@ const exchangePhantomToken = async (
   fetch: (request: Request) => Promise<Response>,
 ): Promise<string | null> => {
   const credentials = configuration.clientID + ':' + configuration.clientSecret
-  const base64Credentials = Buffer.from(credentials)
-    .toString('base64')
+  const base64Credentials = btoa(credentials)
     .replace(/=/g, '')
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
@@ -218,7 +230,10 @@ const exchangePhantomToken = async (
   }
 
   if (introspectionResponse.status != 200) {
-    throw new AuthorizationServerError()
+    throw new AuthorizationServerError(
+      introspectionResponse.status,
+      introspectionResponse.text(),
+    )
   }
 
   return introspectionResponse.text()

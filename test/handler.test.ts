@@ -19,8 +19,15 @@ import makeServiceWorkerEnv from 'service-worker-mock'
 import Configuration from '../src/configuration'
 import encryptValue from './valueEncrypter'
 import { serialize } from 'cookie'
+import nodecrypto from 'crypto'
 
 declare let global: never
+
+// Workers use browser API, tests use node API. We need these two so that tests can run.
+Object.assign(global, {
+  btoa: (credentials: string) => Buffer.from(credentials).toString('base64'),
+  crypto: nodecrypto.webcrypto,
+})
 
 describe('OAuth Proxy tests', () => {
   const configuration = new Configuration(
