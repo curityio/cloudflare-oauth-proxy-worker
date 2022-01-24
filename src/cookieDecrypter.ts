@@ -14,41 +14,49 @@
  *  limitations under the License.
  */
 
-const GCM_IV_SIZE = 12
-const GCM_TAG_SIZE = 16
+const VERSION_SIZE = 1;
+const GCM_IV_SIZE = 12;
+const GCM_TAG_SIZE = 16;
+const CURRENT_VERSION = 1;
 
 export default async function decryptCookie(
-  payloadHex: string,
+  payloadBase64UrlEncoded: string,
   encryptionKeyHex: string,
 ): Promise<string> {
-  const minSize = (GCM_IV_SIZE + 1 + GCM_TAG_SIZE) * 2
-  if (payloadHex.length < minSize) {
+  const payloadBytes = base64DecodeURL(payloadBase64UrlEncoded)
+
+  const minSize = (VERSION_SIZE + GCM_IV_SIZE + 1 + GCM_TAG_SIZE)
+  if (payloadBytes.length < minSize) {
     throw new Error('The received payload is invalid and cannot be parsed')
   }
 
-  const ivHex = payloadHex.substring(0, GCM_IV_SIZE * 2)
-  const ciphertextHex = payloadHex.substring(
-    GCM_IV_SIZE * 2,
-    payloadHex.length - GCM_TAG_SIZE * 2,
-  )
-  const tagHex = payloadHex.substring(payloadHex.length - GCM_TAG_SIZE * 2)
+  const version = payloadBytes[0]
+  if (version !== CURRENT_VERSION) {
+    throw new Error('The received cookie has an invalid format')
+  }
+
+  let offset = VERSION_SIZE
+
+  const ivBytes = payloadBytes.slice(offset, offset + GCM_IV_SIZE)
+  offset += GCM_IV_SIZE
+  const ciphertextAndTagBytes = payloadBytes.slice(offset)
 
   const aesKey = await crypto.subtle.importKey(
-    'raw',
-    hexToBytes(encryptionKeyHex),
-    'AES-GCM',
-    true,
-    ['decrypt'],
+      'raw',
+      hexToBytes(encryptionKeyHex),
+      'AES-GCM',
+      true,
+      ['decrypt'],
   )
 
   const decrypted = await crypto.subtle.decrypt(
-    {
-      name: 'AES-GCM',
-      iv: hexToBytes(ivHex),
-      tagLength: GCM_TAG_SIZE * 8,
-    },
-    aesKey,
-    hexToBytes(ciphertextHex + tagHex),
+      {
+        name: 'AES-GCM',
+        iv: ivBytes,
+        tagLength: GCM_TAG_SIZE * 8, // length in bits
+      },
+      aesKey,
+      ciphertextAndTagBytes,
   )
 
   const decoder = new TextDecoder()
@@ -61,4 +69,10 @@ function hexToBytes(hex: string): Uint8Array {
     bytes[i] = parseInt(hex.substr(i * 2, 2), 16)
   }
   return bytes
+}
+
+function base64DecodeURL(b64urlstring: string): Uint8Array {
+  return new Uint8Array(atob(b64urlstring.replace(/-/g, '+').replace(/_/g, '/')).split('').map(val => {
+    return val.charCodeAt(0);
+  }));
 }

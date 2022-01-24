@@ -26,6 +26,7 @@ declare let global: never
 // Workers use browser API, tests use node API. We need these two so that tests can run.
 Object.assign(global, {
   btoa: (credentials: string) => Buffer.from(credentials).toString('base64'),
+  atob: (base64: string) => Buffer.from(base64, 'base64').toString('binary'),
   crypto: nodecrypto.webcrypto,
 })
 

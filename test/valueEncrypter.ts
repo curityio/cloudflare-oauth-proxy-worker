@@ -31,22 +31,21 @@ function encrypt(
   encryptionKeyBytes: CipherKey,
   ivBytes: Buffer,
 ) {
-  const cipher = crypto.createCipheriv(
-    'aes-256-gcm',
-    encryptionKeyBytes,
-    ivBytes,
-  )
+  const cipher = crypto.createCipheriv('aes-256-gcm', encryptionKeyBytes, ivBytes);
 
-  const plaintextBytes = Buffer.from(payloadText, 'ascii')
-  const ciphertextBytes = Buffer.concat([
-    cipher.update(plaintextBytes),
-    cipher.final(),
-  ])
+  const versionBytes = Buffer.from(new Uint8Array([1]))
+  const plaintextBytes = Buffer.from(payloadText)
+
+  const encryptedBytes = cipher.update(plaintextBytes)
+  const finalBytes = cipher.final()
+
+  const ciphertextBytes = Buffer.concat([encryptedBytes, finalBytes])
   const tagBytes = cipher.getAuthTag()
 
-  return (
-    ivBytes.toString('hex') +
-    ciphertextBytes.toString('hex') +
-    tagBytes.toString('hex')
-  )
+  const allBytes = Buffer.concat([versionBytes, ivBytes, ciphertextBytes, tagBytes])
+
+  return allBytes.toString("base64")
+      .replace(/=/g, "")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
 }
