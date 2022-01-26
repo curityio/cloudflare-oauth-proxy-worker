@@ -17,6 +17,18 @@ First make sure that proper configuration values are entered in the `wrangler.to
 
 `npm test` will run the test suite. Tests are written using [Jest](https://jestjs.io/).
 
+## Configuration
+
+The worker uses the following environment variables for configuration. These can be set in the `wrangler.toml` file or directly from the Cloudflare workers UI.
+
+- `TRUSTED_WEB_ORIGINS` - a comma-separated list of trusted web origins. Requests coming from other origins will be rejected by the Proxy.
+- `COOKIE_NAME_PREFIX` - the name prefix of the cookies used by the proxy.
+- `ENCRYPTION_KEY` - a 256-bit encryption key represented as a 64-character hex string. The key is used to decrypt cookie values. You can use the following command to generate a secure key: `openssl rand 32 | xxd -p -c 64`
+- `USE_PHANTOM_TOKEN` - a boolean informing the worker whether a phantom token is used. If true, then the worker will perform token introspection before calling the API.
+- `INTROSPECTION_URL` - the URL of the introspection endpoint of the Authorization Server.
+- `CLIENT_ID` - the ID of the client used to perform the introspection call.
+- `CLIENT_SECRET` - the secret of the client used to perform the introspection call.
+
 ## More Information
 
 Please visit [curity.io](https://curity.io/) for more information about the Token Handler and the Curity Identity Server.
