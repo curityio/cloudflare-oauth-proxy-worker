@@ -5,6 +5,9 @@
   "main": "dist/worker.js",
   "scripts": {
     "build": "webpack",
+    "login": "wrangler login",
+    "start": "wrangler dev",
+    "publish": "wrangler publish",
     "format": "prettier --write  '*.{json,js}' 'src/**/*.{js,ts}' 'test/**/*.{js,ts}'",
     "lint": "eslint --max-warnings=0 src && prettier --check '*.{json,js}' 'src/**/*.{js,ts}' 'test/**/*.{js,ts}'",
     "test": "jest --config jestconfig.json --verbose"
@@ -20,6 +23,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^3.0.0",
+    "@cloudflare/wrangler": "^1.19",
     "@types/cookie": "^0.4.1",
     "@types/jest": "^26.0.23",
     "@types/node": "^16.11.7",
