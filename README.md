@@ -11,7 +11,7 @@ An Oauth Proxy module is part of a [Token Handler](https://curity.io/resources/l
 
 ### Running the Dev Environment
 
-First make sure that proper configuration values are entered in the `wrangler.toml` file, then run `wrangler dev` to start the worker in the dev environment. Have a look at the [Token Handler end to end tutorial](https://curity.io/resources/learn/token-handler-spa-tutorial/) to learn how to set up the rest of the environment used by the Token Handler. That tutorial uses an nginx API gateway and must be tweaked to work with this worker. 
+First make sure that proper configuration values are entered in the `wrangler.toml` file, then run `wrangler dev` to start the worker in the dev environment. Have a look at the [SPA and Token Handler's Deployment](https://github.com/curityio/spa-using-token-handler) to learn how to set up the rest of the environment used by the Token Handler. That tutorial uses an nginx API gateway and must be tweaked to work with this worker. 
 
 ### Testing
 
